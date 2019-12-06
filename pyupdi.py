@@ -191,7 +191,7 @@ def _process(nvm, args):
                 if not _set_fuse(nvm, fusenum, value):
                     return False
     if args.flash is not None:
-        return _flash_file(nvm, args.flash, args.batch)
+        return _flash_file(nvm, args.flash)
 
     if args.readfuses:
         if not _read_fuses(nvm):
@@ -199,7 +199,7 @@ def _process(nvm, args):
     return True
 
 
-def _flash_file(nvm, filename, batch):
+def _flash_file(nvm, filename):
     data, start_address = nvm.load_ihex(filename)
 
     fail = False
