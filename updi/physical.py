@@ -36,6 +36,15 @@ class UpdiPhysical(object):
         self.logger.info("Opening {} at {} baud".format(port, baud))
         self.ser = serial.Serial(port, baud, parity=serial.PARITY_EVEN, timeout=1, stopbits=serial.STOPBITS_TWO)
 
+    def setRTS(self, state):
+        self.ser.rts = state
+
+    def setDTR(self, state):
+        self.ser.dtr = state
+
+    def getCD(self):
+        return self.ser.cd
+
     def _loginfo(self, msg, data):
         if data and isinstance(data[0], str):
             i_data = [ord(x) for x in data]

@@ -94,12 +94,18 @@ def _main():
                             level=logging.WARNING)
 
     if args.batch:
+
+        nvm = UpdiNvmProgrammer(comport=args.comport,
+                    baud=args.baudrate,
+                    device=Device(args.device))
+
+        nvm.setLEDs('off')
         
         while True:
 
-            nvm = UpdiNvmProgrammer(comport=args.comport,
+            '''nvm = UpdiNvmProgrammer(comport=args.comport,
                             baud=args.baudrate,
-                            device=Device(args.device))
+                            device=Device(args.device))'''
 
             while not nvm.getBTN():
                 time.sleep(0.016)

@@ -26,6 +26,12 @@ class UpdiNvmProgrammer(object):
         self.logger.info("Reading device info")
         return self.application.device_info()
 
+    def setLEDs(self, color):
+        self.application.setLEDs(color)
+    
+    def getBTN(self):
+        return self.application.getBTN()
+
     def enter_progmode(self):
         """
             Enter programming mode

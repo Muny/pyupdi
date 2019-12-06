@@ -38,6 +38,23 @@ class UpdiApplication(object):
                 self.logger.info("Device ID = {0:X}{1:X}{2:X} rev {3:}".format(devid[0], devid[1], devid[2],
                                                                                chr(ord('A') + devrev[0])))
 
+    def setLEDs(self, color):
+        if color == 'off':
+            self.datalink.setLED1(False)
+            self.datalink.setLED2(False)
+        elif color == 'green':
+            self.datalink.setLED1(False)
+            self.datalink.setLED2(True)
+        elif color == 'red':
+            self.datalink.setLED1(True)
+            self.datalink.setLED2(False)
+        elif color == 'yellow':
+            self.datalink.setLED1(True)
+            self.datalink.setLED2(True)
+
+    def getBTN(self):
+        return self.datalink.getBTN()
+
     def in_prog_mode(self):
         """
             Checks whether the NVM PROG flag is up

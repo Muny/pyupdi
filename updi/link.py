@@ -19,9 +19,10 @@ class UpdiDatalink(object):
         # Create a UPDI physical connection
         self.updi_phy = UpdiPhysical(comport, baud)
 
+    def start(self):
         # Initialise
         self.init()
-
+    
         # Check
         if not self.check():
             # Send double break if all is not well, and re-check
@@ -36,6 +37,14 @@ class UpdiDatalink(object):
         """
         self.stcs(constants.UPDI_CS_CTRLB, 1 << constants.UPDI_CTRLB_CCDETDIS_BIT)
         self.stcs(constants.UPDI_CS_CTRLA, 1 << constants.UPDI_CTRLA_IBDLY_BIT)
+    
+    def setLED1(self, state):
+        self.updi_phy.setRTS(state)
+    def setLED2(self, state):
+        self.updi_phy.setDTR(state)
+
+    def getBTN(self):
+        return self.updi_phy.getCD()
 
     def check(self):
         """
