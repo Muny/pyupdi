@@ -6,6 +6,7 @@ import sys
 import argparse
 import re
 import logging
+import time
 
 from device.device import Device
 from updi.nvm import UpdiNvmProgrammer
@@ -68,6 +69,8 @@ def _main():
                         help="Perform a chip erase (implied with --flash)")
     parser.add_argument("-b", "--baudrate", type=int, default=115200)
     parser.add_argument("-f", "--flash", help="Intel HEX file to flash.")
+    parser.add_argument("-k", "--batch", action="store_true", help="Batch flash with Micro-UPDI Programmer")
+
     parser.add_argument("-r", "--reset", action="store_true",
                         help="Reset")
     parser.add_argument("-fs", "--fuses", action="append", nargs="*",
@@ -90,23 +93,78 @@ def _main():
         logging.basicConfig(format="%(levelname)s:%(name)s %(message)s",
                             level=logging.WARNING)
 
-    nvm = UpdiNvmProgrammer(comport=args.comport,
+    if args.batch:
+        
+        while True:
+
+            nvm = UpdiNvmProgrammer(comport=args.comport,
                             baud=args.baudrate,
                             device=Device(args.device))
-    if not args.reset: # any action except reset
-        try:
-            nvm.enter_progmode()
-        except:
-            print("Device is locked. Performing unlock with chip erase.")
-            nvm.unlock_device()
 
-        nvm.get_device_info()
+            while not nvm.getBTN():
+                time.sleep(0.016)
 
-        if not _process(nvm, args):
-            print("Error during processing")
+            state = False
+        
+            while nvm.getBTN():
+                state = not state
+                nvm.setLEDs('green' if state else 'off')
+                time.sleep(0.055)
+
+            nvm.setLEDs('yellow')
+
+            try:
+                nvm.application.datalink.start()
+            except:
+                nvm.setLEDs('red')
+                while not nvm.getBTN():
+                    time.sleep(0.016)
+                continue
+
+            if not args.reset: # any action except reset
+                try:
+                    nvm.enter_progmode()
+                except:
+                    print("Device is locked. Performing unlock with chip erase.")
+                    nvm.unlock_device()
+
+                nvm.get_device_info()
+
+                try:
+                    if not _process(nvm, args):
+                        print("Error during processing")
+                        nvm.setLEDs('red')
+                    else:
+                        nvm.setLEDs('green')
+                except:
+                    nvm.setLEDs('red')
+
+            nvm.leave_progmode()
+
+            while not nvm.getBTN():
+                time.sleep(0.016)
+    else:
+        nvm = UpdiNvmProgrammer(comport=args.comport,
+                            baud=args.baudrate,
+                            device=Device(args.device))
+
+        nvm.application.datalink.start()
+
+        if not args.reset: # any action except reset
+            try:
+                nvm.enter_progmode()
+            except:
+                print("Device is locked. Performing unlock with chip erase.")
+                nvm.unlock_device()
+
+            nvm.get_device_info()
+
+            if not _process(nvm, args):
+                print("Error during processing")
 
     # Reset only needs this.
     nvm.leave_progmode()
+
 
 
 def _process(nvm, args):
@@ -127,14 +185,15 @@ def _process(nvm, args):
                 if not _set_fuse(nvm, fusenum, value):
                     return False
     if args.flash is not None:
-        return _flash_file(nvm, args.flash)
+        return _flash_file(nvm, args.flash, args.batch)
+
     if args.readfuses:
         if not _read_fuses(nvm):
             return False
     return True
 
 
-def _flash_file(nvm, filename):
+def _flash_file(nvm, filename, batch):
     data, start_address = nvm.load_ihex(filename)
 
     fail = False
@@ -176,3 +235,4 @@ def _read_fuses(nvm):
 
 if __name__ == "__main__":
     _main()
+
